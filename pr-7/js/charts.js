@@ -138,12 +138,13 @@ function renderSteps(canvasId, series) {
 /**
  * Decide the color for a day's "consumed" bar.
  *
- * Red when that day's weight is above the goal weight and the calorie
- * balance (consumed + deficit) overshoots what was burned; green otherwise.
+ * Red when the calorie balance (consumed + deficit) overshoots what was
+ * burned; green otherwise. The deficit applied depends on whether the day's
+ * weight is above the goal (`deficit`) or on/below it (`deficitN`).
  */
-function consumedColor(consumed, burned, deficit, aboveGoal) {
+function consumedColor(consumed, burned, deficit) {
   const balance = consumed + deficit;
-  if (aboveGoal && balance > burned) return PALETTE.danger;
+  if (balance > burned) return PALETTE.danger;
   return PALETTE.good;
 }
 
@@ -152,15 +153,15 @@ function consumedColor(consumed, burned, deficit, aboveGoal) {
  * @param {string} canvasId
  * @param {{label:string,value:number}[]} burned    calories burned per day
  * @param {{label:string,value:number}[]} consumed  calories consumed per day
- * @param {{goalWeight:number,deficit:number,weight:{value:number}[]}} opts
+ * @param {{goalWeight:number,deficit:number,deficitN:number,weight:{value:number}[]}} opts
  */
 function renderCalories(canvasId, burned, consumed, opts) {
-  const { goalWeight, deficit, weight } = opts;
+  const { goalWeight, deficit, deficitN, weight } = opts;
 
   const consumedColors = consumed.map((p, i) => {
     const dayWeight = weight && weight[i] ? weight[i].value : 0;
-    const aboveGoal = dayWeight > goalWeight;
-    return consumedColor(p.value, burned[i] ? burned[i].value : 0, deficit, aboveGoal);
+    const dayDeficit = dayWeight > goalWeight ? deficit : deficitN;
+    return consumedColor(p.value, burned[i] ? burned[i].value : 0, dayDeficit);
   });
 
   const datasets = [
