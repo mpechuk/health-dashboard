@@ -9,6 +9,10 @@ const PALETTE = {
   steps: "#00b0b9",
   calories: "#f59e0b",
   weight: "#6c5ce7",
+  // Calories-consumed status colors.
+  good: "#22c55e",
+  warn: "#f97316",
+  danger: "#ef4444",
   grid: "rgba(255,255,255,0.06)",
   text: "#9aa0ad",
 };
@@ -93,8 +97,72 @@ function renderSteps(canvasId, series) {
   return barChart(canvasId, series, PALETTE.steps, "Steps");
 }
 
-function renderCalories(canvasId, series) {
-  return barChart(canvasId, series, PALETTE.calories, "Calories");
+/**
+ * Decide the color for a day's "consumed" bar.
+ *
+ * When the latest weight is above the goal weight, days where the
+ * calorie balance (consumed + deficit) overshoots what was burned are
+ * flagged: orange past the burn line, red once it overshoots by 200+.
+ * Otherwise (at/below goal, or comfortably under burn) the bar is green.
+ */
+function consumedColor(consumed, burned, deficit, aboveGoal) {
+  const balance = consumed + deficit;
+  if (aboveGoal && balance > burned + 200) return PALETTE.danger;
+  if (aboveGoal && balance > burned) return PALETTE.warn;
+  return PALETTE.good;
+}
+
+/**
+ * Calories chart: burned (bars) alongside consumed (bars colored by status).
+ * @param {string} canvasId
+ * @param {{label:string,value:number}[]} burned    calories burned per day
+ * @param {{label:string,value:number}[]} consumed  calories consumed per day
+ * @param {{goalWeight:number,deficit:number,latestWeight:number}} opts
+ */
+function renderCalories(canvasId, burned, consumed, opts) {
+  const { goalWeight, deficit, latestWeight } = opts;
+  const aboveGoal = latestWeight > goalWeight;
+
+  const consumedColors = consumed.map((p, i) =>
+    consumedColor(p.value, burned[i] ? burned[i].value : 0, deficit, aboveGoal)
+  );
+
+  return new Chart(document.getElementById(canvasId), {
+    type: "bar",
+    data: {
+      labels: burned.map((p) => p.label),
+      datasets: [
+        {
+          label: "Burned",
+          data: burned.map((p) => p.value),
+          backgroundColor: PALETTE.calories,
+          borderRadius: 6,
+          maxBarThickness: 48,
+        },
+        {
+          label: "Consumed",
+          data: consumed.map((p) => p.value),
+          backgroundColor: consumedColors,
+          borderRadius: 6,
+          maxBarThickness: 48,
+        },
+      ],
+    },
+    options: {
+      ...BASE_OPTIONS,
+      plugins: {
+        ...BASE_OPTIONS.plugins,
+        legend: { display: true, labels: { color: PALETTE.text } },
+      },
+      scales: {
+        ...BASE_OPTIONS.scales,
+        y: {
+          ...BASE_OPTIONS.scales.y,
+          beginAtZero: true,
+        },
+      },
+    },
+  });
 }
 
 function renderWeight(canvasId, series) {

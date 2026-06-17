@@ -46,7 +46,17 @@
         <div class="chart-holder"><canvas id="chart-steps"></canvas></div>
       </article>
       <article class="panel">
-        <h2>Calories burned</h2>
+        <h2>Calories</h2>
+        <div class="controls">
+          <label class="control">
+            <span>Goal weight (kg)</span>
+            <input type="number" id="goal-weight" value="70.5" step="0.1" min="0" inputmode="decimal" />
+          </label>
+          <label class="control">
+            <span>Calorie deficit</span>
+            <input type="number" id="calorie-deficit" value="300" step="50" min="0" inputmode="numeric" />
+          </label>
+        </div>
         <div class="chart-holder"><canvas id="chart-calories"></canvas></div>
       </article>
       <article class="panel">

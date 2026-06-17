@@ -9,6 +9,8 @@
  *               { "activities-steps":    [ { "dateTime": "YYYY-MM-DD", "value": "8423" }, ... ] }
  *   calories -> GET /1/user/-/activities/calories/date/today/7d.json
  *               { "activities-calories": [ { "dateTime": "YYYY-MM-DD", "value": "2310" }, ... ] }
+ *   caloriesIn -> GET /1/user/-/foods/log/caloriesIn/date/today/7d.json
+ *               { "foods-log-caloriesIn": [ { "dateTime": "YYYY-MM-DD", "value": "2300" }, ... ] }
  *   weight   -> GET /1/user/-/body/weight/date/today/7d.json
  *               { "body-weight":         [ { "dateTime": "YYYY-MM-DD", "value": "70.4" }, ... ] }
  *
@@ -67,12 +69,15 @@ function getDemoData() {
   // Plausible weekday values (index 0 = six days ago ... index 6 = today).
   const stepsByDay = [9120, 6430, 12840, 8210, 5170, 13360, 7480];
   const caloriesByDay = [2410, 2080, 2760, 2330, 1890, 2820, 2210];
+  // Calories consumed (food log) — mirrors Fitbit's foods/log/caloriesIn endpoint.
+  const caloriesInByDay = [2300, 2200, 2500, 2600, 2100, 2400, 2350];
   // Gentle downward weight trend (kg), one decimal like Fitbit.
   const weightByDay = [70.9, 70.8, 70.6, 70.7, 70.4, 70.2, 70.3];
 
   return {
     steps: buildSeries("activities-steps", (i) => stepsByDay[i]),
     calories: buildSeries("activities-calories", (i) => caloriesByDay[i]),
+    caloriesIn: buildSeries("foods-log-caloriesIn", (i) => caloriesInByDay[i]),
     weight: buildSeries("body-weight", (i) => weightByDay[i].toFixed(1)),
   };
 }

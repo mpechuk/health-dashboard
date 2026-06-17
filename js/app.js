@@ -50,13 +50,34 @@ function init() {
   const data = getDemoData();
   const steps = parseSeries(data.steps, "activities-steps");
   const calories = parseSeries(data.calories, "activities-calories");
+  const caloriesIn = parseSeries(data.caloriesIn, "foods-log-caloriesIn");
   const weight = parseSeries(data.weight, "body-weight");
 
   fillSummaries(steps, calories, weight);
 
   renderSteps("chart-steps", steps);
-  renderCalories("chart-calories", calories);
   renderWeight("chart-weight", weight);
+
+  const latestWeight = weight[weight.length - 1].value;
+  const goalInput = document.getElementById("goal-weight");
+  const deficitInput = document.getElementById("calorie-deficit");
+
+  // Re-render the calories chart whenever the goal weight or deficit changes.
+  let caloriesChart;
+  function drawCalories() {
+    const goalWeight = Number(goalInput.value);
+    const deficit = Number(deficitInput.value);
+    if (caloriesChart) caloriesChart.destroy();
+    caloriesChart = renderCalories("chart-calories", calories, caloriesIn, {
+      goalWeight,
+      deficit,
+      latestWeight,
+    });
+  }
+
+  goalInput.addEventListener("input", drawCalories);
+  deficitInput.addEventListener("input", drawCalories);
+  drawCalories();
 }
 
 document.addEventListener("DOMContentLoaded", init);
