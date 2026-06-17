@@ -232,22 +232,37 @@ function renderCalories(canvasId, burned, consumed, opts) {
  */
 function renderWeight(canvasId, series, opts) {
   const goalWeight = opts && opts.goalWeight;
+  const hasGoal = Number.isFinite(goalWeight);
 
-  const datasets = [
-    {
-      label: "Weight",
-      data: series.map((p) => p.value),
-      borderColor: PALETTE.weight,
-      backgroundColor: "rgba(108,92,231,0.15)",
-      fill: true,
-      tension: 0.35,
-      pointRadius: 4,
-      pointBackgroundColor: PALETTE.weight,
-      borderWidth: 2,
-    },
-  ];
+  // Per-day point color: red above the goal weight, green on/below it.
+  const pointColors = series.map((p) =>
+    hasGoal && p.value > goalWeight ? PALETTE.danger : PALETTE.good
+  );
 
-  if (Number.isFinite(goalWeight)) {
+  const weightDataset = {
+    label: "Weight",
+    data: series.map((p) => p.value),
+    borderColor: hasGoal ? PALETTE.good : PALETTE.weight,
+    backgroundColor: "rgba(108,92,231,0.15)",
+    fill: true,
+    tension: 0.35,
+    pointRadius: 4,
+    pointBackgroundColor: hasGoal ? pointColors : PALETTE.weight,
+    pointBorderColor: hasGoal ? pointColors : PALETTE.weight,
+    borderWidth: 2,
+  };
+
+  if (hasGoal) {
+    // Color each line segment by its endpoint: red above goal, green below.
+    weightDataset.segment = {
+      borderColor: (ctx) =>
+        ctx.p1.parsed.y > goalWeight ? PALETTE.danger : PALETTE.good,
+    };
+  }
+
+  const datasets = [weightDataset];
+
+  if (hasGoal) {
     datasets.push(goalLineDataset("Goal weight", goalWeight, series.length));
   }
 
