@@ -11,7 +11,6 @@ const PALETTE = {
   weight: "#6c5ce7",
   // Calories-consumed status colors.
   good: "#22c55e",
-  warn: "#f97316",
   danger: "#ef4444",
   goal: "#e2e8f0",
   grid: "rgba(255,255,255,0.06)",
@@ -139,15 +138,12 @@ function renderSteps(canvasId, series) {
 /**
  * Decide the color for a day's "consumed" bar.
  *
- * When the latest weight is above the goal weight, days where the
- * calorie balance (consumed + deficit) overshoots what was burned are
- * flagged: orange past the burn line, red once it overshoots by 200+.
- * Otherwise (at/below goal, or comfortably under burn) the bar is green.
+ * Red when the latest weight is above the goal weight and the calorie
+ * balance (consumed + deficit) overshoots what was burned; green otherwise.
  */
 function consumedColor(consumed, burned, deficit, aboveGoal) {
   const balance = consumed + deficit;
-  if (aboveGoal && balance > burned + 200) return PALETTE.danger;
-  if (aboveGoal && balance > burned) return PALETTE.warn;
+  if (aboveGoal && balance > burned) return PALETTE.danger;
   return PALETTE.good;
 }
 
