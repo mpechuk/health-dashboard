@@ -13,9 +13,29 @@ const PALETTE = {
   good: "#22c55e",
   warn: "#f97316",
   danger: "#ef4444",
+  goal: "#e2e8f0",
   grid: "rgba(255,255,255,0.06)",
   text: "#9aa0ad",
 };
+
+/**
+ * Build a flat dashed "goal" line dataset spanning every label.
+ * Mixed into bar/line charts to show a target value.
+ */
+function goalLineDataset(label, value, count) {
+  return {
+    type: "line",
+    label,
+    data: new Array(count).fill(value),
+    borderColor: PALETTE.goal,
+    borderDash: [6, 4],
+    borderWidth: 2,
+    pointRadius: 0,
+    pointHitRadius: 0,
+    fill: false,
+    tension: 0,
+  };
+}
 
 /**
  * Read the scalar from a Google Health dataPoint value array.
@@ -136,36 +156,42 @@ function consumedColor(consumed, burned, deficit, aboveGoal) {
  * @param {string} canvasId
  * @param {{label:string,value:number}[]} burned    calories burned per day
  * @param {{label:string,value:number}[]} consumed  calories consumed per day
- * @param {{goalWeight:number,deficit:number,latestWeight:number}} opts
+ * @param {{goalWeight:number,deficit:number,latestWeight:number,caloriesGoal:number}} opts
  */
 function renderCalories(canvasId, burned, consumed, opts) {
-  const { goalWeight, deficit, latestWeight } = opts;
+  const { goalWeight, deficit, latestWeight, caloriesGoal } = opts;
   const aboveGoal = latestWeight > goalWeight;
 
   const consumedColors = consumed.map((p, i) =>
     consumedColor(p.value, burned[i] ? burned[i].value : 0, deficit, aboveGoal)
   );
 
+  const datasets = [
+    {
+      label: "Burned",
+      data: burned.map((p) => p.value),
+      backgroundColor: PALETTE.calories,
+      borderRadius: 6,
+      maxBarThickness: 48,
+    },
+    {
+      label: "Consumed",
+      data: consumed.map((p) => p.value),
+      backgroundColor: consumedColors,
+      borderRadius: 6,
+      maxBarThickness: 48,
+    },
+  ];
+
+  if (Number.isFinite(caloriesGoal)) {
+    datasets.push(goalLineDataset("Calories goal", caloriesGoal, burned.length));
+  }
+
   return new Chart(document.getElementById(canvasId), {
     type: "bar",
     data: {
       labels: burned.map((p) => p.label),
-      datasets: [
-        {
-          label: "Burned",
-          data: burned.map((p) => p.value),
-          backgroundColor: PALETTE.calories,
-          borderRadius: 6,
-          maxBarThickness: 48,
-        },
-        {
-          label: "Consumed",
-          data: consumed.map((p) => p.value),
-          backgroundColor: consumedColors,
-          borderRadius: 6,
-          maxBarThickness: 48,
-        },
-      ],
+      datasets,
     },
     options: {
       ...BASE_OPTIONS,
@@ -184,27 +210,45 @@ function renderCalories(canvasId, burned, consumed, opts) {
   });
 }
 
-function renderWeight(canvasId, series) {
+/**
+ * Weight chart: measured weight (line) with an optional goal weight line.
+ * @param {string} canvasId
+ * @param {{label:string,value:number}[]} series
+ * @param {{goalWeight:number}} [opts]
+ */
+function renderWeight(canvasId, series, opts) {
+  const goalWeight = opts && opts.goalWeight;
+
+  const datasets = [
+    {
+      label: "Weight",
+      data: series.map((p) => p.value),
+      borderColor: PALETTE.weight,
+      backgroundColor: "rgba(108,92,231,0.15)",
+      fill: true,
+      tension: 0.35,
+      pointRadius: 4,
+      pointBackgroundColor: PALETTE.weight,
+      borderWidth: 2,
+    },
+  ];
+
+  if (Number.isFinite(goalWeight)) {
+    datasets.push(goalLineDataset("Goal weight", goalWeight, series.length));
+  }
+
   return new Chart(document.getElementById(canvasId), {
     type: "line",
     data: {
       labels: series.map((p) => p.label),
-      datasets: [
-        {
-          label: "Weight",
-          data: series.map((p) => p.value),
-          borderColor: PALETTE.weight,
-          backgroundColor: "rgba(108,92,231,0.15)",
-          fill: true,
-          tension: 0.35,
-          pointRadius: 4,
-          pointBackgroundColor: PALETTE.weight,
-          borderWidth: 2,
-        },
-      ],
+      datasets,
     },
     options: {
       ...BASE_OPTIONS,
+      plugins: {
+        ...BASE_OPTIONS.plugins,
+        legend: { display: true, labels: { color: PALETTE.text } },
+      },
       scales: {
         ...BASE_OPTIONS.scales,
         y: {

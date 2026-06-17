@@ -57,28 +57,44 @@ function init() {
   fillSummaries(steps, calories, weight);
 
   renderSteps("chart-steps", steps);
-  renderWeight("chart-weight", weight);
 
   const latestWeight = weight[weight.length - 1].value;
   const goalInput = document.getElementById("goal-weight");
   const deficitInput = document.getElementById("calorie-deficit");
+  const caloriesGoalInput = document.getElementById("calories-goal");
 
-  // Re-render the calories chart whenever the goal weight or deficit changes.
+  // Re-render the calories chart whenever the goal weight, deficit, or
+  // calories goal changes.
   let caloriesChart;
   function drawCalories() {
     const goalWeight = Number(goalInput.value);
     const deficit = Number(deficitInput.value);
+    const caloriesGoal = Number(caloriesGoalInput.value);
     if (caloriesChart) caloriesChart.destroy();
     caloriesChart = renderCalories("chart-calories", calories, caloriesIn, {
       goalWeight,
       deficit,
       latestWeight,
+      caloriesGoal,
     });
   }
 
-  goalInput.addEventListener("input", drawCalories);
+  // Re-render the weight chart whenever the goal weight changes.
+  let weightChart;
+  function drawWeight() {
+    const goalWeight = Number(goalInput.value);
+    if (weightChart) weightChart.destroy();
+    weightChart = renderWeight("chart-weight", weight, { goalWeight });
+  }
+
+  goalInput.addEventListener("input", () => {
+    drawCalories();
+    drawWeight();
+  });
   deficitInput.addEventListener("input", drawCalories);
+  caloriesGoalInput.addEventListener("input", drawCalories);
   drawCalories();
+  drawWeight();
 }
 
 document.addEventListener("DOMContentLoaded", init);
