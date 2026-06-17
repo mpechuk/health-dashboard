@@ -19,7 +19,8 @@ css/styles.css                 # responsive, dark UI
 js/googleHealthData.js         # data layer — getDemoData() returns Google Health-shaped JSON
 js/charts.js                   # Chart.js rendering (steps/calories bars, weight line)
 js/app.js                      # wiring: load data, compute summaries, render charts
-.github/workflows/deploy.yml   # GitHub Actions deploy to Pages
+.github/workflows/deploy.yml   # publish main → gh-pages branch
+.github/workflows/preview.yml  # per-PR preview deploys (and cleanup on close)
 .nojekyll                      # serve css/ and js/ folders verbatim (skip Jekyll)
 ```
 
@@ -34,12 +35,19 @@ python3 -m http.server 8000
 
 ## Deploy (GitHub Pages)
 
-This repo ships a GitHub Actions workflow (`.github/workflows/deploy.yml`) that publishes the
-site on every push to `main` or the working branch, and on manual dispatch.
+Deployment is published to the **`gh-pages` branch** by two GitHub Actions workflows:
+
+- **`.github/workflows/deploy.yml`** — on every push to `main` (and on manual dispatch),
+  publishes the site to the root of `gh-pages` → `https://mpechuk.github.io/health-dashboard/`.
+- **`.github/workflows/preview.yml`** — for every pull request, deploys a live preview to
+  `gh-pages/pr-<number>/` and comments the URL
+  (`https://mpechuk.github.io/health-dashboard/pr-<number>/`) on the PR. The preview updates on
+  each push and is removed automatically when the PR closes. Production redeploys preserve open
+  previews (`clean-exclude: pr-*/`).
 
 **One-time setup:** in the repo, go to **Settings → Pages → Build and deployment** and set
-**Source = "GitHub Actions"**. After the next push, the `Deploy to GitHub Pages` workflow
-publishes the site and prints its URL in the run summary.
+**Source = "Deploy from a branch"**, **Branch = `gh-pages`**, **folder = `/ (root)`**. After the
+next push to `main`, the site goes live at the URL above.
 
 ## Going live with Google Health
 

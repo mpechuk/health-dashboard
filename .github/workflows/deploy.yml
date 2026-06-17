@@ -1,42 +1,36 @@
 name: Deploy to GitHub Pages
 
+# One-time repo setup required to enable both production + PR previews:
+#   Settings → Pages → Source → "Deploy from a branch" → Branch: gh-pages / folder: / (root)
+
 on:
   push:
-    branches:
-      - main
-      - claude/fitbit-health-dashboard-m35kpc
+    branches: ["main"]
   workflow_dispatch:
 
-# Allow the workflow to publish to GitHub Pages.
 permissions:
-  contents: read
-  pages: write
-  id-token: write
-
-# Only one concurrent Pages deployment; let in-progress runs finish.
-concurrency:
-  group: pages
-  cancel-in-progress: false
+  contents: write
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Configure Pages
-        uses: actions/configure-pages@v5
-
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          # Static site lives at the repo root.
-          path: "."
+      - name: Stage site
+        # No build step — assemble the publishable files (keep .github/README out
+        # of the deployed branch).
+        run: |
+          mkdir -p dist
+          cp -r index.html css js .nojekyll dist/
 
       - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: dist
+          branch: gh-pages
+          clean: true
+          # Preserve open PR previews when redeploying production.
+          clean-exclude: |
+            pr-*/
