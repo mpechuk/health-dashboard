@@ -152,10 +152,10 @@ function consumedColor(consumed, burned, deficit, aboveGoal) {
  * @param {string} canvasId
  * @param {{label:string,value:number}[]} burned    calories burned per day
  * @param {{label:string,value:number}[]} consumed  calories consumed per day
- * @param {{goalWeight:number,deficit:number,weight:{value:number}[],caloriesGoal:number}} opts
+ * @param {{goalWeight:number,deficit:number,weight:{value:number}[]}} opts
  */
 function renderCalories(canvasId, burned, consumed, opts) {
-  const { goalWeight, deficit, weight, caloriesGoal } = opts;
+  const { goalWeight, deficit, weight } = opts;
 
   const consumedColors = consumed.map((p, i) => {
     const dayWeight = weight && weight[i] ? weight[i].value : 0;
@@ -179,10 +179,6 @@ function renderCalories(canvasId, burned, consumed, opts) {
       maxBarThickness: 48,
     },
   ];
-
-  if (Number.isFinite(caloriesGoal)) {
-    datasets.push(goalLineDataset("Calories goal", caloriesGoal, burned.length));
-  }
 
   return new Chart(document.getElementById(canvasId), {
     type: "bar",
