@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Fitbit Health Dashboard</title>
-  <meta name="description" content="A weekly view of steps, calories, and weight from Fitbit." />
+  <title>Google Health Dashboard</title>
+  <meta name="description" content="A weekly view of steps, calories, and weight from Google Health." />
   <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
@@ -46,7 +46,17 @@
         <div class="chart-holder"><canvas id="chart-steps"></canvas></div>
       </article>
       <article class="panel">
-        <h2>Calories burned</h2>
+        <h2>Calories</h2>
+        <div class="controls">
+          <label class="control">
+            <span>Goal weight (kg)</span>
+            <input type="number" id="goal-weight" value="70.5" step="0.1" min="0" inputmode="decimal" />
+          </label>
+          <label class="control">
+            <span>Calorie deficit</span>
+            <input type="number" id="calorie-deficit" value="300" step="50" min="0" inputmode="numeric" />
+          </label>
+        </div>
         <div class="chart-holder"><canvas id="chart-calories"></canvas></div>
       </article>
       <article class="panel">
@@ -58,14 +68,14 @@
 
   <footer class="site-footer wrap">
     <p>
-      Built with the <a href="https://dev.fitbit.com/build/reference/web-api/" target="_blank" rel="noopener">Fitbit Web API</a>
-      data model. Currently showing demo data — see the README to connect a live Fitbit account.
+      Built with the <a href="https://developers.google.com/health" target="_blank" rel="noopener">Google Health API</a>
+      data model. Currently showing demo data — see the README to connect a live Google Health account.
     </p>
   </footer>
 
   <!-- Chart.js v4 (CDN) — no build step, GitHub Pages friendly -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-  <script src="js/fitbitData.js"></script>
+  <script src="js/googleHealthData.js"></script>
   <script src="js/charts.js"></script>
   <script src="js/app.js"></script>
 </body>
