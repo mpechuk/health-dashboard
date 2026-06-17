@@ -1,0 +1,94 @@
+name: PR Preview
+
+on:
+  pull_request:
+    branches: ["main"]
+    types: [opened, synchronize, reopened, closed]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  deploy-preview:
+    if: github.event.action != 'closed'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Stage site
+        # No build step — relative asset paths (css/…, js/…) resolve fine from the
+        # pr-<n>/ subfolder, so no base-path rewriting is needed.
+        run: |
+          mkdir -p dist
+          cp -r index.html css js .nojekyll dist/
+
+      - name: Deploy preview to gh-pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: dist
+          branch: gh-pages
+          target-folder: pr-${{ github.event.number }}
+          clean: true
+
+      - name: Post preview URL on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.issue.number;
+            const url = `https://mpechuk.github.io/health-dashboard/pr-${pr}/`;
+            const body = [
+              '## Preview deployment ready',
+              '',
+              `**[Open preview →](${url})**`,
+              `\`${url}\``,
+              '',
+              '_Updates on every push. Removed when the PR is closed._',
+            ].join('\n');
+
+            const { data: comments } = await github.rest.issues.listComments({
+              ...context.repo,
+              issue_number: pr,
+            });
+
+            const existing = comments.find(
+              c => c.user.type === 'Bot' && c.body.includes('Preview deployment ready')
+            );
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                ...context.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                ...context.repo,
+                issue_number: pr,
+                body,
+              });
+            }
+
+  cleanup-preview:
+    if: github.event.action == 'closed'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout gh-pages branch
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          fetch-depth: 0
+
+      - name: Remove preview directory and push
+        run: |
+          PR_DIR="pr-${{ github.event.number }}"
+          if [ -d "$PR_DIR" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git rm -rf "$PR_DIR"
+            git commit -m "chore: remove preview for PR #${{ github.event.number }}"
+            git push
+          else
+            echo "No preview directory to clean up for PR #${{ github.event.number }}"
+          fi
