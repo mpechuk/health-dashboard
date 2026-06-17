@@ -96,7 +96,7 @@ To use real data, create OAuth credentials and replace that function with live f
 
 - Calories consumed is read from the **nutrition log** (`com.google.nutrition`): each dataPoint
   carries a nutrient map, and the `calories` nutrient holds the energy consumed that day.
-- Weight is shown in **kilograms** (the Google Health API reports mass in kg) — adjust labels if
-  you prefer a different unit.
+- Weight is shown in **pounds**. The Google Health API reports mass in kilograms, so values are
+  converted to pounds (`KG_TO_LB` in `js/app.js`) for display — adjust if you prefer a different unit.
 - Demo data always spans the **last 7 calendar days ending today**, so the dashboard always
   looks current.

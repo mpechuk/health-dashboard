@@ -2,6 +2,9 @@
  * App bootstrap: load data, render charts, fill summary cards.
  */
 
+// Google Health reports mass in kilograms; the dashboard displays pounds.
+const KG_TO_LB = 2.20462;
+
 function formatNumber(n) {
   return n.toLocaleString(undefined, { maximumFractionDigits: 0 });
 }
@@ -30,7 +33,7 @@ function fillSummaries(steps, calories, weight) {
   const start = weight[0].value;
   const delta = latest - start;
   const deltaAbs = Math.abs(delta).toFixed(1);
-  document.getElementById("summary-weight").textContent = `${latest.toFixed(1)} kg`;
+  document.getElementById("summary-weight").textContent = `${latest.toFixed(1)} lb`;
 
   const sub = document.getElementById("summary-weight-sub");
   if (delta === 0) {
@@ -39,7 +42,7 @@ function fillSummaries(steps, calories, weight) {
     const dir = delta < 0 ? "down" : "up";
     const cls = delta < 0 ? "delta-down" : "delta-up";
     const arrow = delta < 0 ? "▼" : "▲";
-    sub.innerHTML = `<span class="${cls}">${arrow} ${deltaAbs} kg ${dir}</span> this week`;
+    sub.innerHTML = `<span class="${cls}">${arrow} ${deltaAbs} lb ${dir}</span> this week`;
   }
 }
 
@@ -52,7 +55,10 @@ function init() {
   const steps = parseSeries(data.steps);
   const calories = parseSeries(data.calories);
   const caloriesIn = parseSeries(data.nutrition, caloriesConsumed);
-  const weight = parseSeries(data.weight);
+  const weight = parseSeries(data.weight).map((p) => ({
+    ...p,
+    value: p.value * KG_TO_LB,
+  }));
 
   fillSummaries(steps, calories, weight);
 
