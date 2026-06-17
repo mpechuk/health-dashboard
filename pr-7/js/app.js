@@ -60,21 +60,17 @@ function init() {
 
   const goalInput = document.getElementById("goal-weight");
   const deficitInput = document.getElementById("calorie-deficit");
-  const caloriesGoalInput = document.getElementById("calories-goal");
 
-  // Re-render the calories chart whenever the goal weight, deficit, or
-  // calories goal changes.
+  // Re-render the calories chart whenever the goal weight or deficit changes.
   let caloriesChart;
   function drawCalories() {
     const goalWeight = Number(goalInput.value);
     const deficit = Number(deficitInput.value);
-    const caloriesGoal = Number(caloriesGoalInput.value);
     if (caloriesChart) caloriesChart.destroy();
     caloriesChart = renderCalories("chart-calories", calories, caloriesIn, {
       goalWeight,
       deficit,
       weight,
-      caloriesGoal,
     });
   }
 
@@ -91,7 +87,6 @@ function init() {
     drawWeight();
   });
   deficitInput.addEventListener("input", drawCalories);
-  caloriesGoalInput.addEventListener("input", drawCalories);
   drawCalories();
   drawWeight();
 }
