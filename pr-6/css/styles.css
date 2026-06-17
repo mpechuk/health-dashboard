@@ -1,0 +1,208 @@
+:root {
+  --bg: #0f1117;
+  --bg-elev: #181b24;
+  --bg-elev-2: #1f2330;
+  --text: #e8eaf0;
+  --text-dim: #9aa0ad;
+  --border: #2a2f3d;
+  --accent: #00b0b9;       /* Fitbit teal */
+  --accent-2: #6c5ce7;
+  --accent-3: #f59e0b;
+  --good: #22c55e;
+  --bad: #ef4444;
+  --radius: 14px;
+  --shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: radial-gradient(1200px 600px at 80% -10%, #15303a 0%, var(--bg) 55%);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
+    sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+  line-height: 1.45;
+  min-height: 100vh;
+}
+
+.wrap {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+/* Header */
+.site-header {
+  padding: 28px 0 10px;
+}
+
+.header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.6rem;
+  font-weight: 700;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.title .dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 4px rgba(0, 176, 185, 0.18);
+}
+
+.subtitle {
+  color: var(--text-dim);
+  margin: 6px auto 0;
+  font-size: 0.98rem;
+}
+
+.badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #1a1205;
+  background: var(--accent-3);
+  padding: 5px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+/* Summary cards */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin: 22px 0;
+}
+
+.card {
+  background: linear-gradient(180deg, var(--bg-elev-2), var(--bg-elev));
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 18px 16px;
+  box-shadow: var(--shadow);
+}
+
+.card-label {
+  margin: 0;
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.card-value {
+  margin: 6px 0 2px;
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.card-sub {
+  margin: 0;
+  color: var(--text-dim);
+  font-size: 0.82rem;
+}
+
+.card-sub .delta-down { color: var(--good); }
+.card-sub .delta-up { color: var(--bad); }
+
+/* Chart panels */
+.panels {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.panel {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 16px 18px;
+  box-shadow: var(--shadow);
+}
+
+/* Weight chart spans full width below the two activity charts */
+.panel:nth-child(3) {
+  grid-column: 1 / -1;
+}
+
+.panel h2 {
+  margin: 0 0 12px;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.chart-holder {
+  position: relative;
+  height: 260px;
+}
+
+/* Calories chart controls */
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin: 0 0 14px;
+}
+
+.control {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-dim);
+}
+
+.control input {
+  width: 120px;
+  padding: 7px 9px;
+  background: var(--bg-elev-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 0.95rem;
+}
+
+.control input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+/* Footer */
+.site-footer {
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  padding: 8px 0 36px;
+}
+
+.site-footer a {
+  color: var(--accent);
+}
+
+/* Responsive */
+@media (max-width: 760px) {
+  .cards { grid-template-columns: 1fr; }
+  .panels { grid-template-columns: 1fr; }
+  .panel:nth-child(3) { grid-column: auto; }
+  .title { font-size: 1.35rem; }
+  .card-value { font-size: 1.7rem; }
+}
