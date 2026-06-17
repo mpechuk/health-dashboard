@@ -58,7 +58,6 @@ function init() {
 
   renderSteps("chart-steps", steps);
 
-  const latestWeight = weight[weight.length - 1].value;
   const goalInput = document.getElementById("goal-weight");
   const deficitInput = document.getElementById("calorie-deficit");
   const caloriesGoalInput = document.getElementById("calories-goal");
@@ -74,7 +73,7 @@ function init() {
     caloriesChart = renderCalories("chart-calories", calories, caloriesIn, {
       goalWeight,
       deficit,
-      latestWeight,
+      weight,
       caloriesGoal,
     });
   }
