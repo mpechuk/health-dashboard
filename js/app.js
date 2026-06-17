@@ -2,6 +2,9 @@
  * App bootstrap: load data, render charts, fill summary cards.
  */
 
+// Google Health reports mass in kilograms; the dashboard displays pounds.
+const KG_TO_LB = 2.20462;
+
 function formatNumber(n) {
   return n.toLocaleString(undefined, { maximumFractionDigits: 0 });
 }
@@ -30,7 +33,7 @@ function fillSummaries(steps, calories, weight) {
   const start = weight[0].value;
   const delta = latest - start;
   const deltaAbs = Math.abs(delta).toFixed(1);
-  document.getElementById("summary-weight").textContent = `${latest.toFixed(1)} kg`;
+  document.getElementById("summary-weight").textContent = `${latest.toFixed(1)} lb`;
 
   const sub = document.getElementById("summary-weight-sub");
   if (delta === 0) {
@@ -39,7 +42,7 @@ function fillSummaries(steps, calories, weight) {
     const dir = delta < 0 ? "down" : "up";
     const cls = delta < 0 ? "delta-down" : "delta-up";
     const arrow = delta < 0 ? "▼" : "▲";
-    sub.innerHTML = `<span class="${cls}">${arrow} ${deltaAbs} kg ${dir}</span> this week`;
+    sub.innerHTML = `<span class="${cls}">${arrow} ${deltaAbs} lb ${dir}</span> this week`;
   }
 }
 
@@ -52,33 +55,59 @@ function init() {
   const steps = parseSeries(data.steps);
   const calories = parseSeries(data.calories);
   const caloriesIn = parseSeries(data.nutrition, caloriesConsumed);
-  const weight = parseSeries(data.weight);
+  const weight = parseSeries(data.weight).map((p) => ({
+    ...p,
+    value: p.value * KG_TO_LB,
+  }));
 
   fillSummaries(steps, calories, weight);
 
-  renderSteps("chart-steps", steps);
-  renderWeight("chart-weight", weight);
-
-  const latestWeight = weight[weight.length - 1].value;
   const goalInput = document.getElementById("goal-weight");
   const deficitInput = document.getElementById("calorie-deficit");
+  const deficitNInput = document.getElementById("calorie-deficit-n");
+  const stepsGoalInput = document.getElementById("steps-goal");
 
-  // Re-render the calories chart whenever the goal weight or deficit changes.
+  // Re-render the steps chart whenever the steps goal changes.
+  let stepsChart;
+  function drawSteps() {
+    const stepsGoal = Number(stepsGoalInput.value);
+    if (stepsChart) stepsChart.destroy();
+    stepsChart = renderSteps("chart-steps", steps, { stepsGoal });
+  }
+
+  // Re-render the calories chart whenever the goal weight or a deficit changes.
   let caloriesChart;
   function drawCalories() {
     const goalWeight = Number(goalInput.value);
     const deficit = Number(deficitInput.value);
+    const deficitN = Number(deficitNInput.value);
     if (caloriesChart) caloriesChart.destroy();
     caloriesChart = renderCalories("chart-calories", calories, caloriesIn, {
       goalWeight,
       deficit,
-      latestWeight,
+      deficitN,
+      weight,
     });
   }
 
-  goalInput.addEventListener("input", drawCalories);
+  // Re-render the weight chart whenever the goal weight changes.
+  let weightChart;
+  function drawWeight() {
+    const goalWeight = Number(goalInput.value);
+    if (weightChart) weightChart.destroy();
+    weightChart = renderWeight("chart-weight", weight, { goalWeight });
+  }
+
+  goalInput.addEventListener("input", () => {
+    drawCalories();
+    drawWeight();
+  });
   deficitInput.addEventListener("input", drawCalories);
+  deficitNInput.addEventListener("input", drawCalories);
+  stepsGoalInput.addEventListener("input", drawSteps);
+  drawSteps();
   drawCalories();
+  drawWeight();
 }
 
 document.addEventListener("DOMContentLoaded", init);

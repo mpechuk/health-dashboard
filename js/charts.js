@@ -11,11 +11,30 @@ const PALETTE = {
   weight: "#6c5ce7",
   // Calories-consumed status colors.
   good: "#22c55e",
-  warn: "#f97316",
   danger: "#ef4444",
+  goal: "#e2e8f0",
   grid: "rgba(255,255,255,0.06)",
   text: "#9aa0ad",
 };
+
+/**
+ * Build a flat dashed "goal" line dataset spanning every label.
+ * Mixed into bar/line charts to show a target value.
+ */
+function goalLineDataset(label, value, count) {
+  return {
+    type: "line",
+    label,
+    data: new Array(count).fill(value),
+    borderColor: PALETTE.goal,
+    borderDash: [6, 4],
+    borderWidth: 2,
+    pointRadius: 0,
+    pointHitRadius: 0,
+    fill: false,
+    tension: 0,
+  };
+}
 
 /**
  * Read the scalar from a Google Health dataPoint value array.
@@ -84,23 +103,47 @@ const BASE_OPTIONS = {
   },
 };
 
-function barChart(canvasId, series, color, label) {
+/**
+ * Steps chart: per-day bars colored green when the day meets/exceeds the
+ * steps goal and red when below it, with a dashed goal reference line.
+ * @param {string} canvasId
+ * @param {{label:string,value:number}[]} series
+ * @param {{stepsGoal:number}} [opts]
+ */
+function renderSteps(canvasId, series, opts) {
+  const stepsGoal = opts && opts.stepsGoal;
+  const hasGoal = Number.isFinite(stepsGoal);
+
+  const colors = series.map((p) =>
+    hasGoal && p.value < stepsGoal ? PALETTE.danger : PALETTE.good
+  );
+
+  const datasets = [
+    {
+      label: "Steps",
+      data: series.map((p) => p.value),
+      backgroundColor: hasGoal ? colors : PALETTE.steps,
+      borderRadius: 6,
+      maxBarThickness: 48,
+    },
+  ];
+
+  if (hasGoal) {
+    datasets.push(goalLineDataset("Steps goal", stepsGoal, series.length));
+  }
+
   return new Chart(document.getElementById(canvasId), {
     type: "bar",
     data: {
       labels: series.map((p) => p.label),
-      datasets: [
-        {
-          label,
-          data: series.map((p) => p.value),
-          backgroundColor: color,
-          borderRadius: 6,
-          maxBarThickness: 48,
-        },
-      ],
+      datasets,
     },
     options: {
       ...BASE_OPTIONS,
+      plugins: {
+        ...BASE_OPTIONS.plugins,
+        legend: { display: hasGoal, labels: { color: PALETTE.text } },
+      },
       scales: {
         ...BASE_OPTIONS.scales,
         y: {
@@ -112,22 +155,16 @@ function barChart(canvasId, series, color, label) {
   });
 }
 
-function renderSteps(canvasId, series) {
-  return barChart(canvasId, series, PALETTE.steps, "Steps");
-}
-
 /**
  * Decide the color for a day's "consumed" bar.
  *
- * When the latest weight is above the goal weight, days where the
- * calorie balance (consumed + deficit) overshoots what was burned are
- * flagged: orange past the burn line, red once it overshoots by 200+.
- * Otherwise (at/below goal, or comfortably under burn) the bar is green.
+ * Red when the calorie balance (consumed + deficit) overshoots what was
+ * burned; green otherwise. The deficit applied depends on whether the day's
+ * weight is above the goal (`deficit`) or on/below it (`deficitN`).
  */
-function consumedColor(consumed, burned, deficit, aboveGoal) {
+function consumedColor(consumed, burned, deficit) {
   const balance = consumed + deficit;
-  if (aboveGoal && balance > burned + 200) return PALETTE.danger;
-  if (aboveGoal && balance > burned) return PALETTE.warn;
+  if (balance > burned) return PALETTE.danger;
   return PALETTE.good;
 }
 
@@ -136,36 +173,39 @@ function consumedColor(consumed, burned, deficit, aboveGoal) {
  * @param {string} canvasId
  * @param {{label:string,value:number}[]} burned    calories burned per day
  * @param {{label:string,value:number}[]} consumed  calories consumed per day
- * @param {{goalWeight:number,deficit:number,latestWeight:number}} opts
+ * @param {{goalWeight:number,deficit:number,deficitN:number,weight:{value:number}[]}} opts
  */
 function renderCalories(canvasId, burned, consumed, opts) {
-  const { goalWeight, deficit, latestWeight } = opts;
-  const aboveGoal = latestWeight > goalWeight;
+  const { goalWeight, deficit, deficitN, weight } = opts;
 
-  const consumedColors = consumed.map((p, i) =>
-    consumedColor(p.value, burned[i] ? burned[i].value : 0, deficit, aboveGoal)
-  );
+  const consumedColors = consumed.map((p, i) => {
+    const dayWeight = weight && weight[i] ? weight[i].value : 0;
+    const dayDeficit = dayWeight > goalWeight ? deficit : deficitN;
+    return consumedColor(p.value, burned[i] ? burned[i].value : 0, dayDeficit);
+  });
+
+  const datasets = [
+    {
+      label: "Burned",
+      data: burned.map((p) => p.value),
+      backgroundColor: PALETTE.calories,
+      borderRadius: 6,
+      maxBarThickness: 48,
+    },
+    {
+      label: "Consumed",
+      data: consumed.map((p) => p.value),
+      backgroundColor: consumedColors,
+      borderRadius: 6,
+      maxBarThickness: 48,
+    },
+  ];
 
   return new Chart(document.getElementById(canvasId), {
     type: "bar",
     data: {
       labels: burned.map((p) => p.label),
-      datasets: [
-        {
-          label: "Burned",
-          data: burned.map((p) => p.value),
-          backgroundColor: PALETTE.calories,
-          borderRadius: 6,
-          maxBarThickness: 48,
-        },
-        {
-          label: "Consumed",
-          data: consumed.map((p) => p.value),
-          backgroundColor: consumedColors,
-          borderRadius: 6,
-          maxBarThickness: 48,
-        },
-      ],
+      datasets,
     },
     options: {
       ...BASE_OPTIONS,
@@ -184,27 +224,60 @@ function renderCalories(canvasId, burned, consumed, opts) {
   });
 }
 
-function renderWeight(canvasId, series) {
+/**
+ * Weight chart: measured weight (line) with an optional goal weight line.
+ * @param {string} canvasId
+ * @param {{label:string,value:number}[]} series
+ * @param {{goalWeight:number}} [opts]
+ */
+function renderWeight(canvasId, series, opts) {
+  const goalWeight = opts && opts.goalWeight;
+  const hasGoal = Number.isFinite(goalWeight);
+
+  // Per-day point color: red above the goal weight, green on/below it.
+  const pointColors = series.map((p) =>
+    hasGoal && p.value > goalWeight ? PALETTE.danger : PALETTE.good
+  );
+
+  const weightDataset = {
+    label: "Weight",
+    data: series.map((p) => p.value),
+    borderColor: hasGoal ? PALETTE.good : PALETTE.weight,
+    backgroundColor: "rgba(108,92,231,0.15)",
+    fill: true,
+    tension: 0.35,
+    pointRadius: 4,
+    pointBackgroundColor: hasGoal ? pointColors : PALETTE.weight,
+    pointBorderColor: hasGoal ? pointColors : PALETTE.weight,
+    borderWidth: 2,
+  };
+
+  if (hasGoal) {
+    // Color each line segment by its endpoint: red above goal, green below.
+    weightDataset.segment = {
+      borderColor: (ctx) =>
+        ctx.p1.parsed.y > goalWeight ? PALETTE.danger : PALETTE.good,
+    };
+  }
+
+  const datasets = [weightDataset];
+
+  if (hasGoal) {
+    datasets.push(goalLineDataset("Goal weight", goalWeight, series.length));
+  }
+
   return new Chart(document.getElementById(canvasId), {
     type: "line",
     data: {
       labels: series.map((p) => p.label),
-      datasets: [
-        {
-          label: "Weight",
-          data: series.map((p) => p.value),
-          borderColor: PALETTE.weight,
-          backgroundColor: "rgba(108,92,231,0.15)",
-          fill: true,
-          tension: 0.35,
-          pointRadius: 4,
-          pointBackgroundColor: PALETTE.weight,
-          borderWidth: 2,
-        },
-      ],
+      datasets,
     },
     options: {
       ...BASE_OPTIONS,
+      plugins: {
+        ...BASE_OPTIONS.plugins,
+        legend: { display: true, labels: { color: PALETTE.text } },
+      },
       scales: {
         ...BASE_OPTIONS.scales,
         y: {
