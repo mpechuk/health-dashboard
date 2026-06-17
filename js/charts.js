@@ -103,23 +103,47 @@ const BASE_OPTIONS = {
   },
 };
 
-function barChart(canvasId, series, color, label) {
+/**
+ * Steps chart: per-day bars colored green when the day meets/exceeds the
+ * steps goal and red when below it, with a dashed goal reference line.
+ * @param {string} canvasId
+ * @param {{label:string,value:number}[]} series
+ * @param {{stepsGoal:number}} [opts]
+ */
+function renderSteps(canvasId, series, opts) {
+  const stepsGoal = opts && opts.stepsGoal;
+  const hasGoal = Number.isFinite(stepsGoal);
+
+  const colors = series.map((p) =>
+    hasGoal && p.value < stepsGoal ? PALETTE.danger : PALETTE.good
+  );
+
+  const datasets = [
+    {
+      label: "Steps",
+      data: series.map((p) => p.value),
+      backgroundColor: hasGoal ? colors : PALETTE.steps,
+      borderRadius: 6,
+      maxBarThickness: 48,
+    },
+  ];
+
+  if (hasGoal) {
+    datasets.push(goalLineDataset("Steps goal", stepsGoal, series.length));
+  }
+
   return new Chart(document.getElementById(canvasId), {
     type: "bar",
     data: {
       labels: series.map((p) => p.label),
-      datasets: [
-        {
-          label,
-          data: series.map((p) => p.value),
-          backgroundColor: color,
-          borderRadius: 6,
-          maxBarThickness: 48,
-        },
-      ],
+      datasets,
     },
     options: {
       ...BASE_OPTIONS,
+      plugins: {
+        ...BASE_OPTIONS.plugins,
+        legend: { display: hasGoal, labels: { color: PALETTE.text } },
+      },
       scales: {
         ...BASE_OPTIONS.scales,
         y: {
@@ -129,10 +153,6 @@ function barChart(canvasId, series, color, label) {
       },
     },
   });
-}
-
-function renderSteps(canvasId, series) {
-  return barChart(canvasId, series, PALETTE.steps, "Steps");
 }
 
 /**
