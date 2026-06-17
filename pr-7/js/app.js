@@ -62,11 +62,18 @@ function init() {
 
   fillSummaries(steps, calories, weight);
 
-  renderSteps("chart-steps", steps);
-
   const goalInput = document.getElementById("goal-weight");
   const deficitInput = document.getElementById("calorie-deficit");
   const deficitNInput = document.getElementById("calorie-deficit-n");
+  const stepsGoalInput = document.getElementById("steps-goal");
+
+  // Re-render the steps chart whenever the steps goal changes.
+  let stepsChart;
+  function drawSteps() {
+    const stepsGoal = Number(stepsGoalInput.value);
+    if (stepsChart) stepsChart.destroy();
+    stepsChart = renderSteps("chart-steps", steps, { stepsGoal });
+  }
 
   // Re-render the calories chart whenever the goal weight or a deficit changes.
   let caloriesChart;
@@ -97,6 +104,8 @@ function init() {
   });
   deficitInput.addEventListener("input", drawCalories);
   deficitNInput.addEventListener("input", drawCalories);
+  stepsGoalInput.addEventListener("input", drawSteps);
+  drawSteps();
   drawCalories();
   drawWeight();
 }
