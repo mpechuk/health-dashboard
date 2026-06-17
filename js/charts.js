@@ -18,18 +18,37 @@ const PALETTE = {
 };
 
 /**
- * Parse a Fitbit time-series object into a normalized array.
- * @param {object} fitbitObj  e.g. { "activities-steps": [ { dateTime, value }, ... ] }
- * @param {string} key        the response key to read (e.g. "activities-steps")
+ * Read the scalar from a Google Health dataPoint value array.
+ * Falls back across the typed fields (intVal, then fpVal).
+ */
+function scalarValue(value) {
+  const field = (value || [])[0] || {};
+  return Number(field.intVal ?? field.fpVal ?? 0);
+}
+
+/**
+ * Read calories consumed from a com.google.nutrition dataPoint value array:
+ * the first map field holds nutrients; the "calories" key holds the energy.
+ */
+function caloriesConsumed(value) {
+  const nutrients = (value || []).find((f) => f.mapVal)?.mapVal || [];
+  const cal = nutrients.find((n) => n.key === "calories");
+  return Number(cal?.value?.fpVal ?? cal?.value?.intVal ?? 0);
+}
+
+/**
+ * Parse a Google Health series into a normalized array.
+ * @param {{dataPoints:object[]}} series  e.g. { dataTypeName, dataPoints: [...] }
+ * @param {(value:object[])=>number} [extract]  value reader (defaults to scalarValue)
  * @returns {{date:string,label:string,value:number}[]}
  */
-function parseSeries(fitbitObj, key) {
-  const rows = fitbitObj[key] || [];
-  return rows.map((row) => ({
-    date: row.dateTime,
-    label: shortDayLabel(row.dateTime),
-    value: Number(row.value),
-  }));
+function parseSeries(series, extract) {
+  const points = (series && series.dataPoints) || [];
+  const read = extract || scalarValue;
+  return points.map((p) => {
+    const date = p.startTime.slice(0, 10); // "YYYY-MM-DDT..." -> "YYYY-MM-DD"
+    return { date, label: shortDayLabel(date), value: read(p.value) };
+  });
 }
 
 /** "2026-06-16" -> "Mon 16" */
@@ -198,4 +217,10 @@ function renderWeight(canvasId, series) {
   });
 }
 
-window.HealthCharts = { parseSeries, renderSteps, renderCalories, renderWeight };
+window.HealthCharts = {
+  parseSeries,
+  caloriesConsumed,
+  renderSteps,
+  renderCalories,
+  renderWeight,
+};

@@ -45,13 +45,14 @@ function fillSummaries(steps, calories, weight) {
 
 function init() {
   const { getDemoData } = window.HealthData;
-  const { parseSeries, renderSteps, renderCalories, renderWeight } = window.HealthCharts;
+  const { parseSeries, caloriesConsumed, renderSteps, renderCalories, renderWeight } =
+    window.HealthCharts;
 
   const data = getDemoData();
-  const steps = parseSeries(data.steps, "activities-steps");
-  const calories = parseSeries(data.calories, "activities-calories");
-  const caloriesIn = parseSeries(data.caloriesIn, "foods-log-caloriesIn");
-  const weight = parseSeries(data.weight, "body-weight");
+  const steps = parseSeries(data.steps);
+  const calories = parseSeries(data.calories);
+  const caloriesIn = parseSeries(data.nutrition, caloriesConsumed);
+  const weight = parseSeries(data.weight);
 
   fillSummaries(steps, calories, weight);
 
