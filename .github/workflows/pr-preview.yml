@@ -1,0 +1,40 @@
+name: Deploy PR preview
+
+on:
+  pull_request:
+    # Deploy on open/update; clean up on close (incl. merge).
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - closed
+
+# One preview deploy per PR branch; let in-progress runs finish so the
+# deploy and the later cleanup don't race.
+concurrency:
+  group: preview-${{ github.ref }}
+  cancel-in-progress: false
+
+# Needs to push the preview to gh-pages and comment the URL on the PR.
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  deploy-preview:
+    runs-on: ubuntu-latest
+    # Skip previews for PRs from forks: the GITHUB_TOKEN is read-only there,
+    # so it can neither push to gh-pages nor comment.
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy preview
+        uses: rossjrw/pr-preview-action@v1
+        with:
+          # Static site lives at the repo root — no build step.
+          source-dir: .
+          # Lives at https://<user>.github.io/<repo>/pr-preview/pr-<N>/
+          preview-branch: gh-pages
+          umbrella-dir: pr-preview

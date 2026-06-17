@@ -19,7 +19,8 @@ css/styles.css                 # responsive, dark UI
 js/googleHealthData.js         # data layer — getDemoData() returns Google Health-shaped JSON
 js/charts.js                   # Chart.js rendering (steps/calories bars, weight line)
 js/app.js                      # wiring: load data, compute summaries, render charts
-.github/workflows/deploy.yml   # GitHub Actions deploy to Pages
+.github/workflows/deploy.yml      # publish main to the gh-pages branch
+.github/workflows/pr-preview.yml  # deploy a temporary live preview per PR
 .nojekyll                      # serve css/ and js/ folders verbatim (skip Jekyll)
 ```
 
@@ -35,11 +36,30 @@ python3 -m http.server 8000
 ## Deploy (GitHub Pages)
 
 This repo ships a GitHub Actions workflow (`.github/workflows/deploy.yml`) that publishes the
-site on every push to `main` or the working branch, and on manual dispatch.
+site to the **`gh-pages`** branch on every push to `main`, and on manual dispatch.
 
-**One-time setup:** in the repo, go to **Settings → Pages → Build and deployment** and set
-**Source = "GitHub Actions"**. After the next push, the `Deploy to GitHub Pages` workflow
-publishes the site and prints its URL in the run summary.
+**One-time setup:** in the repo, go to **Settings → Pages → Build and deployment**, set
+**Source = "Deploy from a branch"**, and choose **Branch = `gh-pages` / `/ (root)`**. After the
+next push to `main`, the `Deploy to GitHub Pages` workflow commits the site to `gh-pages` and
+Pages serves it at `https://<user>.github.io/health-dashboard/`.
+
+> Both the production site and the PR previews below live on the single `gh-pages` branch — the
+> main deploy excludes the `pr-preview/` directory so open previews survive a production deploy.
+
+## Preview a pull request
+
+Every pull request gets its own **temporary live preview** so reviewers can see the change before
+it merges. The `.github/workflows/pr-preview.yml` workflow
+([`rossjrw/pr-preview-action`](https://github.com/rossjrw/pr-preview-action)):
+
+- deploys the PR's version of the site to `gh-pages` under `pr-preview/pr-<number>/` when the PR
+  is opened or updated,
+- posts (and keeps updating) a sticky comment on the PR with the preview URL
+  `https://<user>.github.io/health-dashboard/pr-preview/pr-<number>/`, and
+- deletes that directory automatically when the PR is closed or merged.
+
+Previews run only for PRs from branches **in this repo** (forks get a read-only token that can't
+publish). No extra setup is needed beyond the one-time Pages configuration above.
 
 ## Going live with Google Health
 
